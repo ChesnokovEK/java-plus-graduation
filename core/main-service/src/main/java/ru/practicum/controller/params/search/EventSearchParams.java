@@ -9,11 +9,11 @@ import lombok.RequiredArgsConstructor;
 @Builder
 public class EventSearchParams {
 
-    AdminSearchParams adminSearchParams;
-    PrivateSearchParams privateSearchParams;
-    PublicSearchParams publicSearchParams;
+    private AdminSearchParams adminSearchParams;
+    private PrivateSearchParams privateSearchParams;
+    private PublicSearchParams publicSearchParams;
 
-    Integer from;
-    Integer size;
+    private Integer from;
+    private Integer size;
 
 }
