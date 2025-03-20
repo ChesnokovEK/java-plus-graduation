@@ -8,6 +8,7 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.entity.Event;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +35,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
 
     @Query(value = "SELECT COUNT(*) FROM LIKES_EVENTS WHERE EVENT_ID = :eventId", nativeQuery = true)
     long countLikesByEventId(Long eventId);
+
+    @Query(value = "SELECT EVENT_ID, COUNT(*) AS LIKES FROM LIKES_EVENTS\n" +
+            "WHERE EVENT_ID IN (:eventIds)\n" +
+            "GROUP BY EVENT_ID", nativeQuery = true)
+    HashMap<Long, Long> countLikesByEventIds(List<Long> eventIds);
 
     @Query(value = "SELECT E.*, RATE.LIKES FROM EVENTS E LEFT JOIN (\n" +
                         "SELECT EVENT_ID, COUNT(*) AS LIKES FROM LIKES_EVENTS\n" +

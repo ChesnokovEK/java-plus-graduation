@@ -45,7 +45,7 @@ public class PrivateLocationController {
     @GetMapping("/top")
     public List<LocationDto> getTop(
             @PathVariable long userId,
-            @RequestParam(required = false, defaultValue = "10") Integer count,
+            @RequestParam(defaultValue = "10") Integer count,
             HttpServletRequest httpRequest) {
         log.info("==> GET /users/{userId}/locations/top");
 

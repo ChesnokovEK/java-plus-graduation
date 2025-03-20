@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import ru.practicum.entity.Location;
 
+import java.util.HashMap;
 import java.util.List;
 
 public interface LocationRepository extends JpaRepository<Location, Long> {
@@ -28,5 +29,8 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
     @Query(value = "SELECT COUNT(*) FROM LIKES_LOCATIONS WHERE LOCATION_ID = :locationId", nativeQuery = true)
     long countLikesByLocationId(Long locationId);
 
-
+    @Query(value = "SELECT LOCATION_ID, COUNT(*) AS LIKES FROM LIKES_LOCATIONS\n" +
+            "WHERE LOCATION_ID IN (:locationIds)\n" +
+            "GROUP BY LOCATION_ID", nativeQuery = true)
+    HashMap<Long, Long> countLikesByLocationIds(List<Long> locationIds);
 }

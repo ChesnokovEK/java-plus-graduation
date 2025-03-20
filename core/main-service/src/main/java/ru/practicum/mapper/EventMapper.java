@@ -2,11 +2,14 @@ package ru.practicum.mapper;
 
 import jakarta.validation.ValidationException;
 import org.mapstruct.*;
+import ru.practicum.controller.params.search.EventSearchParams;
+import ru.practicum.controller.params.search.PublicSearchParams;
 import ru.practicum.dto.event.*;
 import ru.practicum.entity.*;
 import ru.practicum.entity.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public abstract class EventMapper {
@@ -41,6 +44,17 @@ public abstract class EventMapper {
 
     @Mapping(source = "likes", target = "likesCount")
     public abstract EventShortDto eventToEventShortDto(Event event);
+
+    @Mapping(target = "rangeStart", source = "rangeStart")
+    @Mapping(target = "rangeEnd", source = "rangeEnd")
+    public abstract PublicSearchParams toPublicSearchParams(String text, List<Long> categories, Boolean paid,
+                                                            LocalDateTime rangeStart, LocalDateTime rangeEnd);
+
+    @Mapping(target = "publicSearchParams", source = "publicSearchParams")
+    @Mapping(target = "from", source = "from")
+    @Mapping(target = "size", source = "size")
+    public abstract EventSearchParams toEventSearchParams(PublicSearchParams publicSearchParams, Integer from, Integer size);
+
 
     @Named("getCurrentLocalDatetime")
     LocalDateTime getCurrentLocalDatetime() {

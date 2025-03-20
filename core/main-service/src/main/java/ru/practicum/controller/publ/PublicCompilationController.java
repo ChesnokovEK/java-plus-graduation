@@ -17,7 +17,6 @@ public class PublicCompilationController {
     private final CompilationService compilationService;
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
     public List<CompilationDto> getAll(@RequestParam(value = "pinned", defaultValue = "false") Boolean pinned,
                                        @RequestParam(value = "from", defaultValue = "0") int from,
                                        @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -25,7 +24,6 @@ public class PublicCompilationController {
     }
 
     @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
     public CompilationDto getById(@PathVariable("id") long id) {
         return compilationService.getById(id);
     }

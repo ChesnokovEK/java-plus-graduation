@@ -10,7 +10,10 @@ import ru.practicum.mapper.LocationMapper;
 import ru.practicum.repository.LocationRepository;
 import ru.practicum.repository.UserRepository;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,10 +52,13 @@ public class LocationServiceImpl implements LocationService {
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
 
         List<Location> locationTopList = locationRepository.findTop(count);
+        List<Long> locationsIds = locationTopList.stream().map(Location::getId).collect(Collectors.toList());
+        HashMap<Long, Long> results = locationRepository.countLikesByLocationIds(locationsIds);
 
         for (Location location : locationTopList) {
-            location.setLikes(locationRepository.countLikesByLocationId(location.getId()));
+            location.setLikes(results.get(location.getId()));
         }
+
 
         return locationTopList.stream()
                 .map(locationMapper::locationToLocationDto)

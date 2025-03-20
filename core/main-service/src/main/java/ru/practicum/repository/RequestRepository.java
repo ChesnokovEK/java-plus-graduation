@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import ru.practicum.entity.Request;
 import ru.practicum.entity.RequestStatus;
 
+import java.util.HashMap;
 import java.util.List;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
@@ -17,6 +18,12 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     List<Request> findAllByIdInAndEventId(List<Long> ids, long eventId);
 
     long countByStatusAndEventId(RequestStatus status, long eventId);
+
+
+    @Query(value = "SELECT EVENT_ID, COUNT(*) FROM REQUESTS\n" +
+            "WHERE EVENT_ID IN (:eventIds) AND STATUS = (:status)\n" +
+            "GROUP BY EVENT_ID", nativeQuery = true)
+    HashMap<Long, Long> countByStatusAndEventIds(RequestStatus status, List<Long> eventIds);
 
     @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE REQUESTS SET STATUS = ?1 WHERE REQUEST_ID = ?2", nativeQuery = true)

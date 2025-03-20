@@ -15,6 +15,7 @@ import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.entity.EventState;
 import ru.practicum.exception.IncorrectValueException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.mapper.EventMapper;
 import ru.practicum.service.EventService;
 
 import java.time.LocalDateTime;
@@ -30,7 +31,7 @@ public class PublicEventController {
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     private final EventService eventService;
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
-
+    private final EventMapper eventMapper;
 
     @GetMapping
     public List<EventShortDto> getAll(
@@ -51,18 +52,8 @@ public class PublicEventController {
             throw new IncorrectValueException("rangeStart of event can't be after rangeEnd");
         }
 
-        EventSearchParams eventSearchParams = new EventSearchParams();
-        PublicSearchParams publicSearchParams = new PublicSearchParams();
-        publicSearchParams.setText(text);
-        publicSearchParams.setCategories(categories);
-        publicSearchParams.setPaid(paid);
-
-        publicSearchParams.setRangeStart(rangeStart);
-        publicSearchParams.setRangeEnd(rangeEnd);
-
-        eventSearchParams.setPublicSearchParams(publicSearchParams);
-        eventSearchParams.setFrom(from);
-        eventSearchParams.setSize(size);
+        PublicSearchParams publicSearchParams = eventMapper.toPublicSearchParams(text, categories, paid, rangeStart, rangeEnd);
+        EventSearchParams eventSearchParams = eventMapper.toEventSearchParams(publicSearchParams, from, size);
 
         HitDto hitDto = new HitDto(
                 null,
@@ -79,7 +70,7 @@ public class PublicEventController {
 
     @GetMapping("/top")
     public List<EventShortDto> getTop(
-            @RequestParam(required = false, defaultValue = "10") Integer count,
+            @RequestParam(defaultValue = "10") Integer count,
             HttpServletRequest httpRequest) {
         log.info("==> GET /events/top");
 
@@ -97,7 +88,7 @@ public class PublicEventController {
 
     @GetMapping("/top-view")
     public List<EventShortDto> getTopView(
-            @RequestParam(required = false, defaultValue = "10") Integer count,
+            @RequestParam(defaultValue = "10") Integer count,
             HttpServletRequest httpRequest) {
         log.info("==> GET /events/top-view");
 

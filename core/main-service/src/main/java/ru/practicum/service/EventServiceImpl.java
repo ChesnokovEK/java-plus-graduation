@@ -69,8 +69,11 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("User with id " + initiatorId + " not found"));
         Pageable page = PageRequest.of(searchParams.getFrom(), searchParams.getSize());
         List<Event> receivedEvents = eventRepository.findAllByInitiatorId(initiatorId, page);
+        List<Long> eventIds = receivedEvents.stream().map(Event::getId).collect(Collectors.toList());
+        HashMap<Long, Long> result = eventRepository.countLikesByEventIds(eventIds);
+
         for (Event event : receivedEvents) {
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+            event.setLikes(result.get(event.getId()));
         }
         return receivedEvents.stream()
                 .map(eventMapper::eventToEventShortDto)
@@ -135,7 +138,9 @@ public class EventServiceImpl implements EventService {
                 eventRepository.findAll(booleanExpression, page).stream().toList();
 
         statClient.saveHit(hitDto);
-
+        List<Long> eventIds = eventListBySearch.stream().map(Event::getId).collect(Collectors.toList());
+        HashMap<Long, Long> confirmedRequests = requestRepository.countByStatusAndEventIds(RequestStatus.CONFIRMED, eventIds);
+        HashMap<Long, Long> likes = eventRepository.countLikesByEventIds(eventIds);
 
         for (Event event : eventListBySearch) {
             List<HitStatDto> hitStatDtoList = statClient.getStats(
@@ -148,9 +153,8 @@ public class EventServiceImpl implements EventService {
                 view += hitStatDto.getHits();
             }
             event.setViews(view);
-            event.setConfirmedRequests(
-                    requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+            event.setConfirmedRequests(confirmedRequests.get(event.getId()));
+            event.setLikes(likes.get(event.getId()));
         }
 
         return eventListBySearch.stream()
@@ -166,6 +170,9 @@ public class EventServiceImpl implements EventService {
         String rangeStart = LocalDateTime.now().minusYears(100).format(dateTimeFormatter);
 
         List<Event> eventListBySearch = eventRepository.findTop(count);
+        List<Long> eventIds = eventListBySearch.stream().map(Event::getId).collect(Collectors.toList());
+        HashMap<Long, Long> confirmedRequests = requestRepository.countByStatusAndEventIds(RequestStatus.CONFIRMED, eventIds);
+        HashMap<Long, Long> likes = eventRepository.countLikesByEventIds(eventIds);
 
         statClient.saveHit(hitDto);
 
@@ -180,9 +187,8 @@ public class EventServiceImpl implements EventService {
                 view += hitStatDto.getHits();
             }
             event.setViews(view);
-            event.setConfirmedRequests(
-                    requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+            event.setConfirmedRequests(confirmedRequests.get(event.getId()));
+            event.setLikes(likes.get(event.getId()));
         }
 
         return eventListBySearch.stream()
@@ -269,9 +275,13 @@ public class EventServiceImpl implements EventService {
         }
 
         List<Event> receivedEventList = eventRepository.findAll(booleanExpression, page).stream().toList();
+        List<Long> eventIds = receivedEventList.stream().map(Event::getId).collect(Collectors.toList());
+        HashMap<Long, Long> confirmedRequests = requestRepository.countByStatusAndEventIds(RequestStatus.CONFIRMED, eventIds);
+        HashMap<Long, Long> likes = eventRepository.countLikesByEventIds(eventIds);
+
         for (Event event : receivedEventList) {
-            event.setConfirmedRequests(requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+            event.setConfirmedRequests(confirmedRequests.get(event.getId()));
+            event.setLikes(likes.get(event.getId()));
         }
 
         return receivedEventList

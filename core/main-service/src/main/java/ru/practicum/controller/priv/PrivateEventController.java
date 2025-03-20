@@ -44,14 +44,15 @@ public class PrivateEventController {
     @GetMapping
     public List<EventShortDto> getAll(
             @PathVariable Long userId,
-            @RequestParam(required = false, defaultValue = "0") Integer from,
-            @RequestParam(required = false, defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "0") Integer from,
+            @RequestParam(defaultValue = "10") Integer size) {
         log.info("==> GET. /users/{userId}/events " +
                 "Getting all user id {} event: from {}, size {}", userId, from, size);
-        EventSearchParams searchParams = new EventSearchParams();
-        searchParams.setPrivateSearchParams(new PrivateSearchParams(userId));
-        searchParams.setFrom(from);
-        searchParams.setSize(size);
+        EventSearchParams searchParams = EventSearchParams.builder()
+                .privateSearchParams(new PrivateSearchParams(userId))
+                .from(from)
+                .size(size)
+                .build();
         List<EventShortDto> receivedEventsDtoList =
                 eventService.getAllByInitiator(searchParams);
 

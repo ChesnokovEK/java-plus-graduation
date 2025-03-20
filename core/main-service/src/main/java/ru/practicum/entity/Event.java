@@ -38,7 +38,7 @@ public class Event {
     @Column(name = "EVENT_DATE")
     private LocalDateTime eventDate;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "LOCATION_ID")
     private Location location;
 
