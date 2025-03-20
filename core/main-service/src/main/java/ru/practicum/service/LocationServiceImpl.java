@@ -10,7 +10,6 @@ import ru.practicum.mapper.LocationMapper;
 import ru.practicum.repository.LocationRepository;
 import ru.practicum.repository.UserRepository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
