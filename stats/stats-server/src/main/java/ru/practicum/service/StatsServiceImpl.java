@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.HitDto;
 import ru.practicum.HitStatDto;
+import ru.practicum.mapper.HitDtoMapper;
 import ru.practicum.repository.StatsRepository;
 import ru.practicum.entity.Hit;
 
@@ -15,8 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ru.practicum.mapper.HitDtoMapper.dtoToHit;
-import static ru.practicum.mapper.HitDtoMapper.toHitDto;
 import static ru.practicum.utils.Constants.FORMATTER;
 
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     @Transactional
     public HitDto saveHit(HitDto hitDto) {
-        return toHitDto(statsRepository.save(dtoToHit(hitDto)));
+        return HitDtoMapper.toHitDto(statsRepository.save(HitDtoMapper.dtoToHit(hitDto)));
     }
 
     @Override
