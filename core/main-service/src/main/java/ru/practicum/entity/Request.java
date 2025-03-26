@@ -19,7 +19,7 @@ public class Request {
     @Column(name = "REQUEST_ID")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "EVENT_ID")
     private Event event;
 

@@ -16,9 +16,6 @@ import ru.practicum.repository.CategoryRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.practicum.mapper.CategoryMapper.dtoToCategory;
-import static ru.practicum.mapper.CategoryMapper.toCategoryDto;
-
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
@@ -33,7 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto createCategory(@Validated NewCategoryDto dto) {
-        return toCategoryDto(categoryRepository.save(dtoToCategory(dto)));
+        return CategoryMapper.toCategoryDto(categoryRepository.save(CategoryMapper.dtoToCategory(dto)));
     }
 
     @Override
@@ -43,7 +40,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new NotFoundException("Категория id= " + dto.getId() + " не найдена"));
         category.setName(dto.getName());
 
-        return toCategoryDto(categoryRepository.save(category));
+        return CategoryMapper.toCategoryDto(categoryRepository.save(category));
     }
 
     @Override
@@ -61,6 +58,6 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new NotFoundException("Категория id= " + categoryId + " не найдена"));
 
-        return toCategoryDto(category);
+        return CategoryMapper.toCategoryDto(category);
     }
 }

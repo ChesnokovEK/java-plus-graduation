@@ -11,7 +11,7 @@ import static ru.practicum.utils.Constants.FORMATTER;
 @UtilityClass
 public class HitDtoMapper {
 
-    public static HitDto toHitDto(Hit hit) {
+    public HitDto toHitDto(Hit hit) {
         String dateTime = hit.getTimestamp().format(FORMATTER);
 
         return new HitDto(
@@ -23,7 +23,7 @@ public class HitDtoMapper {
         );
     }
 
-    public static Hit dtoToHit(HitDto hitDto) {
+    public Hit dtoToHit(HitDto hitDto) {
 
         LocalDateTime localDateTime = LocalDateTime.parse(hitDto.getTimestamp(), FORMATTER);
         Hit hit = new Hit();
