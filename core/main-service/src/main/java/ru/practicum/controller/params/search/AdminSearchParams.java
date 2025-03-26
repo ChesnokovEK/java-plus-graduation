@@ -1,9 +1,6 @@
 package ru.practicum.controller.params.search;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import ru.practicum.entity.EventState;
 
 import java.time.LocalDateTime;
@@ -13,6 +10,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Getter
 @Builder
+@AllArgsConstructor
 public class AdminSearchParams {
 
     private List<Long> users;
