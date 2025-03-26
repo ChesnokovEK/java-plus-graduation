@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.controller.params.EventUpdateParams;
+import ru.practicum.controller.params.mapper.AdminEventSearchParamsMapper;
+import ru.practicum.controller.params.mapper.AdminSearchParamsMapper;
 import ru.practicum.controller.params.search.AdminSearchParams;
 import ru.practicum.controller.params.search.EventSearchParams;
 import ru.practicum.dto.event.EventFullDto;
@@ -26,6 +28,8 @@ public class AdminEventController {
 
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     private final EventService eventService;
+    private final AdminSearchParamsMapper adminSearchParamsMapper;
+    private final AdminEventSearchParamsMapper adminEventSearchParamsMapper;
 
     @PatchMapping("{eventId}")
     public EventFullDto update(
@@ -51,18 +55,8 @@ public class AdminEventController {
         log.info("==> GET /admin/events Searching events with params: " +
                 "users {}, states: {}, categories: {}, rangeStart: {}, rangeEnd: {}, from: {}, size: {}",
                 users, states, categories, rangeStart, rangeEnd, from, size);
-        AdminSearchParams adminSearchParams = AdminSearchParams.builder()
-                .users(users)
-                .states(states)
-                .categories(categories)
-                .rangeStart(rangeStart)
-                .rangeEnd(rangeEnd)
-                .build();
-        EventSearchParams eventSearchParams = EventSearchParams.builder()
-                .adminSearchParams(adminSearchParams)
-                .from(from)
-                .size(size)
-                .build();
+        AdminSearchParams adminSearchParams = adminSearchParamsMapper.mapToAdminSearchParams(users, states, categories, rangeStart, rangeEnd);
+        EventSearchParams eventSearchParams = adminEventSearchParamsMapper.mapToEventSearchParams(adminSearchParams, from, size);
         List<EventFullDto> receivedEventSearch = eventService.getAllByAdmin(eventSearchParams);
         log.info("==> GET /admin/events Searching events with params: " +
                         "users {}, states: {}, categories: {}, rangeStart: {}, rangeEnd: {}, from: {}, size: {}",

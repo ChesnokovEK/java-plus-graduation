@@ -10,6 +10,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.HitDto;
 import ru.practicum.controller.params.EventGetByIdParams;
+import ru.practicum.controller.params.mapper.PublicEventSearchParamsMapper;
+import ru.practicum.controller.params.mapper.PublicSearchParamsMapper;
 import ru.practicum.controller.params.search.EventSearchParams;
 import ru.practicum.controller.params.search.PublicSearchParams;
 import ru.practicum.dto.event.EventFullDto;
@@ -32,7 +34,8 @@ public class PublicEventController {
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     private final EventService eventService;
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
-
+    private final PublicSearchParamsMapper publicSearchParamsMapper;
+    private final PublicEventSearchParamsMapper publicEventSearchParamsMapper;
 
     @GetMapping
     public List<EventShortDto> getAll(
@@ -53,19 +56,8 @@ public class PublicEventController {
             throw new IncorrectValueException("rangeStart of event can't be after rangeEnd");
         }
 
-        PublicSearchParams publicSearchParams = PublicSearchParams.builder()
-                .text(text)
-                .categories(categories)
-                .paid(paid)
-                .rangeStart(rangeStart)
-                .rangeEnd(rangeEnd)
-                .build();
-
-        EventSearchParams eventSearchParams = EventSearchParams.builder()
-                .publicSearchParams(publicSearchParams)
-                .from(from)
-                .size(size)
-                .build();
+        PublicSearchParams publicSearchParams = publicSearchParamsMapper.mapToPublicSearchParams(text, categories, paid, rangeStart, rangeEnd);
+        EventSearchParams eventSearchParams = publicEventSearchParamsMapper.mapToEventSearchParams(publicSearchParams, from, size);
 
         HitDto hitDto = new HitDto(
                 null,
