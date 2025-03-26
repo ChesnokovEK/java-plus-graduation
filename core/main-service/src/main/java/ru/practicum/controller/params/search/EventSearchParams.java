@@ -1,14 +1,12 @@
 package ru.practicum.controller.params.search;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 @Data
 @RequiredArgsConstructor
 @Getter
 @Builder
+@AllArgsConstructor
 public class EventSearchParams {
 
     AdminSearchParams adminSearchParams;
