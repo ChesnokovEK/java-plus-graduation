@@ -2,6 +2,7 @@ package ru.practicum.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import ru.practicum.dto.location.LocationDto;
 import ru.practicum.entity.Location;
 
 import java.util.List;
@@ -28,5 +29,15 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
     @Query(value = "SELECT COUNT(*) FROM LIKES_LOCATIONS WHERE LOCATION_ID = :locationId", nativeQuery = true)
     long countLikesByLocationId(Long locationId);
 
+    @Query(value = "SELECT " +
+            "L.LOCATION_ID AS id, " +
+            "L.LAT, " +
+            "L.LON, " +
+            "(SELECT COUNT(*) FROM LIKES_LOCATIONS WHERE LOCATION_ID = L.LOCATION_ID) AS likes " +
+            "FROM LOCATIONS L " +
+            "ORDER BY likes DESC " +
+            "LIMIT :count",
+            nativeQuery = true)
+    List<LocationDto> findTopWithLikes(Integer count);
 
 }

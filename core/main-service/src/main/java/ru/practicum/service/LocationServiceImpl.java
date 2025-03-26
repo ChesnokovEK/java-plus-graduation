@@ -48,15 +48,7 @@ public class LocationServiceImpl implements LocationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
 
-        List<Location> locationTopList = locationRepository.findTop(count);
-
-        for (Location location : locationTopList) {
-            location.setLikes(locationRepository.countLikesByLocationId(location.getId()));
-        }
-
-        return locationTopList.stream()
-                .map(locationMapper::locationToLocationDto)
-                .toList();
+        return locationRepository.findTopWithLikes(count);
     }
 
 }
