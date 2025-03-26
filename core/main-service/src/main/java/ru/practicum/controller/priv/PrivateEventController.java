@@ -1,6 +1,8 @@
 package ru.practicum.controller.priv;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -44,14 +46,15 @@ public class PrivateEventController {
     @GetMapping
     public List<EventShortDto> getAll(
             @PathVariable Long userId,
-            @RequestParam(required = false, defaultValue = "0") Integer from,
-            @RequestParam(required = false, defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size) {
         log.info("==> GET. /users/{userId}/events " +
                 "Getting all user id {} event: from {}, size {}", userId, from, size);
-        EventSearchParams searchParams = new EventSearchParams();
-        searchParams.setPrivateSearchParams(new PrivateSearchParams(userId));
-        searchParams.setFrom(from);
-        searchParams.setSize(size);
+        EventSearchParams searchParams = EventSearchParams.builder()
+                .privateSearchParams(new PrivateSearchParams(userId))
+                .from(from)
+                .size(size)
+                .build();
         List<EventShortDto> receivedEventsDtoList =
                 eventService.getAllByInitiator(searchParams);
 

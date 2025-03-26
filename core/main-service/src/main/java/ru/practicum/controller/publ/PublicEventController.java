@@ -2,6 +2,8 @@ package ru.practicum.controller.publ;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -40,8 +42,8 @@ public class PublicEventController {
             @RequestParam(required = false) @DateTimeFormat(pattern = DATE_TIME_PATTERN) LocalDateTime rangeStart,
             @RequestParam(required = false) @DateTimeFormat(pattern = DATE_TIME_PATTERN) LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
-            @RequestParam(defaultValue = "0") Integer from,
-            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size,
             HttpServletRequest httpRequest) {
         log.info("==> GET /events Public searching events with params: " +
                         "text {}, categories: {}, paid {}, rangeStart: {}, rangeEnd: {}, available {}, from: {}, size: {}",
@@ -51,18 +53,19 @@ public class PublicEventController {
             throw new IncorrectValueException("rangeStart of event can't be after rangeEnd");
         }
 
-        EventSearchParams eventSearchParams = new EventSearchParams();
-        PublicSearchParams publicSearchParams = new PublicSearchParams();
-        publicSearchParams.setText(text);
-        publicSearchParams.setCategories(categories);
-        publicSearchParams.setPaid(paid);
+        PublicSearchParams publicSearchParams = PublicSearchParams.builder()
+                .text(text)
+                .categories(categories)
+                .paid(paid)
+                .rangeStart(rangeStart)
+                .rangeEnd(rangeEnd)
+                .build();
 
-        publicSearchParams.setRangeStart(rangeStart);
-        publicSearchParams.setRangeEnd(rangeEnd);
-
-        eventSearchParams.setPublicSearchParams(publicSearchParams);
-        eventSearchParams.setFrom(from);
-        eventSearchParams.setSize(size);
+        EventSearchParams eventSearchParams = EventSearchParams.builder()
+                .publicSearchParams(publicSearchParams)
+                .from(from)
+                .size(size)
+                .build();
 
         HitDto hitDto = new HitDto(
                 null,
@@ -79,7 +82,7 @@ public class PublicEventController {
 
     @GetMapping("/top")
     public List<EventShortDto> getTop(
-            @RequestParam(required = false, defaultValue = "10") Integer count,
+            @RequestParam(defaultValue = "10") @Positive Integer count,
             HttpServletRequest httpRequest) {
         log.info("==> GET /events/top");
 
@@ -97,7 +100,7 @@ public class PublicEventController {
 
     @GetMapping("/top-view")
     public List<EventShortDto> getTopView(
-            @RequestParam(required = false, defaultValue = "10") Integer count,
+            @RequestParam(defaultValue = "10") @Positive Integer count,
             HttpServletRequest httpRequest) {
         log.info("==> GET /events/top-view");
 

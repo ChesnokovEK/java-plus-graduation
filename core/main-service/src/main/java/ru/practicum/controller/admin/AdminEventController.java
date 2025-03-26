@@ -1,6 +1,8 @@
 package ru.practicum.controller.admin;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -43,22 +45,24 @@ public class AdminEventController {
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) @DateTimeFormat(pattern = DATE_TIME_PATTERN) LocalDateTime rangeStart,
             @RequestParam(required = false) @DateTimeFormat(pattern = DATE_TIME_PATTERN) LocalDateTime rangeEnd,
-            @RequestParam(defaultValue = "0") Integer from,
-            @RequestParam(defaultValue = "10") Integer size
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size
     ) {
         log.info("==> GET /admin/events Searching events with params: " +
                 "users {}, states: {}, categories: {}, rangeStart: {}, rangeEnd: {}, from: {}, size: {}",
                 users, states, categories, rangeStart, rangeEnd, from, size);
-        EventSearchParams eventSearchParams = new EventSearchParams();
-        AdminSearchParams adminSearchParams = new AdminSearchParams();
-        adminSearchParams.setUsers(users);
-        adminSearchParams.setStates(states);
-        adminSearchParams.setCategories(categories);
-        adminSearchParams.setRangeStart(rangeStart);
-        adminSearchParams.setRangeEnd(rangeEnd);
-        eventSearchParams.setAdminSearchParams(adminSearchParams);
-        eventSearchParams.setFrom(from);
-        eventSearchParams.setSize(size);
+        AdminSearchParams adminSearchParams = AdminSearchParams.builder()
+                .users(users)
+                .states(states)
+                .categories(categories)
+                .rangeStart(rangeStart)
+                .rangeEnd(rangeEnd)
+                .build();
+        EventSearchParams eventSearchParams = EventSearchParams.builder()
+                .adminSearchParams(adminSearchParams)
+                .from(from)
+                .size(size)
+                .build();
         List<EventFullDto> receivedEventSearch = eventService.getAllByAdmin(eventSearchParams);
         log.info("==> GET /admin/events Searching events with params: " +
                         "users {}, states: {}, categories: {}, rangeStart: {}, rangeEnd: {}, from: {}, size: {}",

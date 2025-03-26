@@ -1,6 +1,7 @@
 package ru.practicum.controller.priv;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +46,7 @@ public class PrivateLocationController {
     @GetMapping("/top")
     public List<LocationDto> getTop(
             @PathVariable long userId,
-            @RequestParam(required = false, defaultValue = "10") Integer count,
+            @RequestParam(defaultValue = "10") @Positive Integer count,
             HttpServletRequest httpRequest) {
         log.info("==> GET /users/{userId}/locations/top");
 

@@ -1,6 +1,8 @@
 package ru.practicum.controller.admin;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -39,8 +41,8 @@ public class AdminUserController {
     @GetMapping
     public List<UserDto> getAll(
             @RequestParam(required = false) List<Long> ids,
-            @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+            @RequestParam(defaultValue = "10") @Positive int size
     ) {
         log.info("==> GET. Getting all users by ids: {}, from: {}, size {}", ids, from, size);
         AdminUsersGetAllParams adminUsersGetAllParams = new AdminUsersGetAllParams(ids, from, size);
