@@ -148,31 +148,44 @@ public class EventServiceImpl implements EventService {
             rangeEnd = rangeStart.plusYears(100);
         }
 
-        List<Event> eventListBySearch = eventListBySearch =
-                eventRepository.findAll(booleanExpression, page).stream().toList();
+        List<Event> eventList = eventRepository.findAll(booleanExpression, page).getContent();
 
-        statClient.saveHit(hitDto);
+        List<Long> eventIds = eventList.stream().map(Event::getId).collect(Collectors.toList());
+        if (eventIds.isEmpty()) return Collections.emptyList();
 
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(
+                RequestStatus.CONFIRMED, eventIds);
 
-        for (Event event : eventListBySearch) {
-            List<HitStatDto> hitStatDtoList = statClient.getStats(
-                    rangeStart.format(dateTimeFormatter),
-                    rangeEnd.format(dateTimeFormatter),
-                    List.of("/event/" + event.getId()),
-                    false);
-            Long view = 0L;
-            for (HitStatDto hitStatDto : hitStatDtoList) {
-                view += hitStatDto.getHits();
+        Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        data -> (Long) data[0],
+                        data -> (Long) data[1]));
+
+        List<String> uris = eventIds.stream()
+                .map(id -> "/event/" + id)
+                .collect(Collectors.toList());
+        List<HitStatDto> allStats = statClient.getStats(
+                rangeStart.format(dateTimeFormatter),
+                rangeEnd.format(dateTimeFormatter),
+                uris,
+                false);
+        Map<Long, Long> viewsMap = new HashMap<>();
+        for (HitStatDto hit : allStats) {
+            Long eventId = extractEventIdFromUri(hit.getUri());
+            if (eventId != null) {
+                viewsMap.merge(eventId, Long.valueOf(hit.getHits()), Long::sum);
             }
-            event.setViews(view);
-            event.setConfirmedRequests(
-                    requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
         }
 
-        return eventListBySearch.stream()
-                .map(eventMapper::eventToEventShortDto)
-                .toList();
+        for (Event event : eventList) {
+            event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
+            event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
+            event.setViews(viewsMap.getOrDefault(event.getId(), 0L));
+        }
+
+        statClient.saveHit(hitDto);
+        return eventList.stream().map(eventMapper::eventToEventShortDto).toList();
     }
 
     @Override
@@ -443,6 +456,17 @@ public class EventServiceImpl implements EventService {
         } else {
             throw new NotFoundException("Like for event: " + eventId + " by user: " + user.getId() + " not exist");
         }
+    }
+
+    private Long extractEventIdFromUri(String uri) {
+        if (uri.startsWith("/event/")) {
+            try {
+                return Long.parseLong(uri.substring(7));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
 }
