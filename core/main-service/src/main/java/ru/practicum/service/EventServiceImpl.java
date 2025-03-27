@@ -63,15 +63,32 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public List<EventShortDto> getAllByInitiator(EventSearchParams searchParams) {
-
         long initiatorId = searchParams.getPrivateSearchParams().getInitiatorId();
         User user = userRepository.findById(initiatorId)
                 .orElseThrow(() -> new NotFoundException("User with id " + initiatorId + " not found"));
         Pageable page = PageRequest.of(searchParams.getFrom(), searchParams.getSize());
         List<Event> receivedEvents = eventRepository.findAllByInitiatorId(initiatorId, page);
-        for (Event event : receivedEvents) {
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+
+        List<Long> eventIds = receivedEvents.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        if (eventIds.isEmpty()) {
+            return Collections.emptyList();
         }
+
+        List<Object[]> likesData = eventRepository.findLikesCountByEventIds(eventIds);
+        Map<Long, Long> likesMap = new HashMap<>();
+        for (Object[] data : likesData) {
+            Long eventId = (Long) data[0];
+            Long count = (Long) data[1];
+            likesMap.put(eventId, count);
+        }
+
+        for (Event event : receivedEvents) {
+            event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
+        }
+
         return receivedEvents.stream()
                 .map(eventMapper::eventToEventShortDto)
                 .toList();

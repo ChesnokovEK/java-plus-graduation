@@ -1,5 +1,6 @@
 package ru.practicum.repository;
 
+import feign.Param;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -36,9 +37,13 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
     long countLikesByEventId(Long eventId);
 
     @Query(value = "SELECT E.*, RATE.LIKES FROM EVENTS E LEFT JOIN (\n" +
-                        "SELECT EVENT_ID, COUNT(*) AS LIKES FROM LIKES_EVENTS\n" +
-                        "GROUP BY EVENT_ID) AS RATE ON E.EVENT_ID = RATE.EVENT_ID\n" +
-                   "ORDER BY RATE.LIKES DESC NULLS LAST\n" +
-                   "LIMIT :count", nativeQuery = true)
+            "SELECT EVENT_ID, COUNT(*) AS LIKES FROM LIKES_EVENTS\n" +
+            "GROUP BY EVENT_ID) AS RATE ON E.EVENT_ID = RATE.EVENT_ID\n" +
+            "ORDER BY RATE.LIKES DESC NULLS LAST\n" +
+            "LIMIT :count", nativeQuery = true)
     List<Event> findTop(Integer count);
+
+    @Query(value = "SELECT event_id, COUNT(*) FROM LIKES_EVENTS " +
+            "WHERE event_id IN (:ids) GROUP BY event_id", nativeQuery = true)
+    List<Object[]> findLikesCountByEventIds(@Param("ids") List<Long> ids);
 }
