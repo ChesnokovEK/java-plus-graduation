@@ -171,7 +171,11 @@ public class EventServiceImpl implements EventService {
         }
 
         Map<Long, Long> confirmedRequestsMap = requestRepository.countByStatusAndEventIds(
-                RequestStatus.CONFIRMED, eventIds);
+                        RequestStatus.CONFIRMED, eventIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        data -> (Long) data[0],
+                        data -> (Long) data[1]));
 
         Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
                 .stream()
@@ -218,7 +222,11 @@ public class EventServiceImpl implements EventService {
         }
 
         Map<Long, Long> confirmedRequestsMap = requestRepository.countByStatusAndEventIds(
-                RequestStatus.CONFIRMED, eventIds);
+                        RequestStatus.CONFIRMED, eventIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        data -> (Long) data[0],
+                        data -> (Long) data[1]));
 
         Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
                 .stream()
@@ -324,7 +332,11 @@ public class EventServiceImpl implements EventService {
         }
 
         Map<Long, Long> confirmedRequestsMap = requestRepository.countByStatusAndEventIds(
-                RequestStatus.CONFIRMED, eventIds);
+                RequestStatus.CONFIRMED, eventIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        data -> (Long) data[0],
+                        data -> (Long) data[1]));
 
         Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
                 .stream()
