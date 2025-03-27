@@ -314,18 +314,88 @@ public class EventServiceImpl implements EventService {
                     event.eventDate.before(rangeEnd));
         }
 
-        List<Event> receivedEventList = eventRepository.findAll(booleanExpression, page).stream().toList();
-        for (Event event : receivedEventList) {
-            event.setConfirmedRequests(requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+        List<Event> events = eventRepository.findAll(booleanExpression, page).getContent();
+
+        if (events.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        return receivedEventList
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(
+                RequestStatus.CONFIRMED, eventIds);
+
+        Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
                 .stream()
+                .collect(Collectors.toMap(
+                        data -> (Long) data[0],
+                        data -> (Long) data[1]));
+
+        for (Event event : events) {
+            event.setConfirmedRequests(
+                    confirmedRequestsMap.getOrDefault(event.getId(), 0L));
+            event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
+        }
+
+        return events.stream()
                 .map(eventMapper::eventToEventFullDto)
                 .toList();
-
     }
+
+
+
+
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<EventFullDto> getAllByAdmin(EventSearchParams searchParams) {
+//        Pageable page = PageRequest.of(
+//                searchParams.getFrom(), searchParams.getSize());
+//
+//        BooleanExpression booleanExpression = event.isNotNull();
+//
+//        if (searchParams.getAdminSearchParams().getUsers() != null) {
+//            booleanExpression = booleanExpression.and(
+//                    event.initiator.id.in(searchParams.getAdminSearchParams().getUsers()));
+//        }
+//
+//        if (searchParams.getAdminSearchParams().getCategories() != null) {
+//            booleanExpression = booleanExpression.and(
+//                    event.category.id.in(searchParams.getAdminSearchParams().getCategories()));
+//        }
+//
+//        if (searchParams.getAdminSearchParams().getStates() != null) {
+//            booleanExpression = booleanExpression.and(
+//                    event.state.in(searchParams.getAdminSearchParams().getStates()));
+//        }
+//
+//        LocalDateTime rangeStart = searchParams.getAdminSearchParams().getRangeStart();
+//        LocalDateTime rangeEnd = searchParams.getAdminSearchParams().getRangeEnd();
+//
+//        if (rangeStart != null && rangeEnd != null) {
+//            booleanExpression = booleanExpression.and(
+//                    event.eventDate.between(rangeStart, rangeEnd));
+//        } else if (rangeStart != null) {
+//            booleanExpression = booleanExpression.and(
+//                    event.eventDate.after(rangeStart));
+//        } else if (rangeEnd != null) {
+//            booleanExpression = booleanExpression.and(
+//                    event.eventDate.before(rangeEnd));
+//        }
+//
+//        List<Event> receivedEventList = eventRepository.findAll(booleanExpression, page).stream().toList();
+//        for (Event event : receivedEventList) {
+//            event.setConfirmedRequests(requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
+//            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+//        }
+//
+//        return receivedEventList
+//                .stream()
+//                .map(eventMapper::eventToEventFullDto)
+//                .toList();
+//
+//    }
 
 
     @Override
@@ -473,16 +543,4 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Like for event: " + eventId + " by user: " + user.getId() + " not exist");
         }
     }
-
-    private Long extractEventIdFromUri(String uri) {
-        if (uri.startsWith("/event/")) {
-            try {
-                return Long.parseLong(uri.substring(7));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
 }
