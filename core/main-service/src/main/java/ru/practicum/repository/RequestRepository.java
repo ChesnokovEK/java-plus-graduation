@@ -8,7 +8,6 @@ import ru.practicum.entity.Request;
 import ru.practicum.entity.RequestStatus;
 
 import java.util.List;
-import java.util.Map;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
 
