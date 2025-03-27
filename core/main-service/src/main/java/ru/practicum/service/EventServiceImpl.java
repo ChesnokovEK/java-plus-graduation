@@ -197,6 +197,9 @@ public class EventServiceImpl implements EventService {
         String rangeStart = LocalDateTime.now().minusYears(100).format(dateTimeFormatter);
 
         List<Event> eventListBySearch = eventRepository.findTop(count);
+        if (eventListBySearch.isEmpty()) return Collections.emptyList();
+
+        List<Long> eventIds = new ArrayList<>();
 
         statClient.saveHit(hitDto);
 
@@ -210,10 +213,22 @@ public class EventServiceImpl implements EventService {
             for (HitStatDto hitStatDto : hitStatDtoList) {
                 view += hitStatDto.getHits();
             }
+            eventIds.add(event.getId());
             event.setViews(view);
-            event.setConfirmedRequests(
-                    requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
-            event.setLikes(eventRepository.countLikesByEventId(event.getId()));
+        }
+
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(
+                RequestStatus.CONFIRMED, eventIds);
+
+        Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        data -> (Long) data[0],
+                        data -> (Long) data[1]));
+
+        for (Event event : eventListBySearch) {
+            event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
+            event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
         }
 
         return eventListBySearch.stream()
