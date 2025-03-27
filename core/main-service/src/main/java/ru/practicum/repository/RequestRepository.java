@@ -34,7 +34,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     @Query(value = "SELECT r.event.id AS eventId, COUNT(r) AS count FROM Request r " +
             "WHERE r.status = :status AND r.event.id IN :eventIds " +
             "GROUP BY r.event.id")
-    Map<Long, Long> countConfirmedRequestsByEventIds(
+    Map<Long, Long> countByStatusAndEventIds(
             @Param("status") RequestStatus status,
             @Param("eventIds") List<Long> eventIds);
 }

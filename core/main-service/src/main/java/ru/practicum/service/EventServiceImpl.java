@@ -170,7 +170,7 @@ public class EventServiceImpl implements EventService {
             event.setViews(view);
         }
 
-        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countByStatusAndEventIds(
                 RequestStatus.CONFIRMED, eventIds);
 
         Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
@@ -217,7 +217,7 @@ public class EventServiceImpl implements EventService {
             event.setViews(view);
         }
 
-        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countByStatusAndEventIds(
                 RequestStatus.CONFIRMED, eventIds);
 
         Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
@@ -321,8 +321,10 @@ public class EventServiceImpl implements EventService {
 
         for (Event event : receivedEventList) {
             eventIds.add(event.getId());
-            event.setConfirmedRequests(requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, event.getId()));
         }
+
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countByStatusAndEventIds(
+                RequestStatus.CONFIRMED, eventIds);
 
         Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
                 .stream()
@@ -331,6 +333,7 @@ public class EventServiceImpl implements EventService {
                         data -> (Long) data[1]));
 
         for (Event event : receivedEventList) {
+            event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
             event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
         }
 
