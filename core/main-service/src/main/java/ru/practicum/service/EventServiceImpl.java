@@ -148,10 +148,27 @@ public class EventServiceImpl implements EventService {
             rangeEnd = rangeStart.plusYears(100);
         }
 
-        List<Event> eventList = eventRepository.findAll(booleanExpression, page).getContent();
+        List<Event> eventListBySearch = eventRepository.findAll(booleanExpression, page).getContent();
 
-        List<Long> eventIds = eventList.stream().map(Event::getId).collect(Collectors.toList());
-        if (eventIds.isEmpty()) return Collections.emptyList();
+        statClient.saveHit(hitDto);
+
+        if (eventListBySearch.isEmpty()) return Collections.emptyList();
+
+        List<Long> eventIds = new ArrayList<>();
+
+        for (Event event : eventListBySearch) {
+            List<HitStatDto> hitStatDtoList = statClient.getStats(
+                    rangeStart.format(dateTimeFormatter),
+                    rangeEnd.format(dateTimeFormatter),
+                    List.of("/event/" + event.getId()),
+                    false);
+            Long view = 0L;
+            for (HitStatDto hitStatDto : hitStatDtoList) {
+                view += hitStatDto.getHits();
+            }
+            eventIds.add(event.getId());
+            event.setViews(view);
+        }
 
         Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(
                 RequestStatus.CONFIRMED, eventIds);
@@ -162,30 +179,14 @@ public class EventServiceImpl implements EventService {
                         data -> (Long) data[0],
                         data -> (Long) data[1]));
 
-        List<String> uris = eventIds.stream()
-                .map(id -> "/event/" + id)
-                .collect(Collectors.toList());
-        List<HitStatDto> allStats = statClient.getStats(
-                rangeStart.format(dateTimeFormatter),
-                rangeEnd.format(dateTimeFormatter),
-                uris,
-                false);
-        Map<Long, Long> viewsMap = new HashMap<>();
-        for (HitStatDto hit : allStats) {
-            Long eventId = extractEventIdFromUri(hit.getUri());
-            if (eventId != null) {
-                viewsMap.merge(eventId, Long.valueOf(hit.getHits()), Long::sum);
-            }
-        }
-
-        for (Event event : eventList) {
+        for (Event event : eventListBySearch) {
             event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
             event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
-            event.setViews(viewsMap.getOrDefault(event.getId(), 0L));
         }
 
-        statClient.saveHit(hitDto);
-        return eventList.stream().map(eventMapper::eventToEventShortDto).toList();
+        return eventListBySearch.stream()
+                .map(eventMapper::eventToEventShortDto)
+                .toList();
     }
 
     @Override
