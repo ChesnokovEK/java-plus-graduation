@@ -8,16 +8,11 @@ import ru.practicum.entity.EventState;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static ru.practicum.controller.params.mapper.AdminSearchParamsMapper.mapToAdminSearchParams;
+
 @Component
 public class AdminEventSearchParamsMapper {
-
-    private final AdminSearchParamsMapper adminSearchParamsMapper;
-
-    public AdminEventSearchParamsMapper(AdminSearchParamsMapper adminSearchParamsMapper) {
-        this.adminSearchParamsMapper = adminSearchParamsMapper;
-    }
-
-    public EventSearchParams mapToEventSearchParams(
+    public static EventSearchParams mapToEventSearchParams(
             List<Long> users,
             List<EventState> states,
             List<Long> categories,
@@ -26,7 +21,7 @@ public class AdminEventSearchParamsMapper {
             Integer from,
             Integer size
     ) {
-        AdminSearchParams adminSearchParams = adminSearchParamsMapper.mapToAdminSearchParams(
+        AdminSearchParams adminSearchParams = mapToAdminSearchParams(
                 users, states, categories, rangeStart, rangeEnd
         );
 
@@ -37,7 +32,7 @@ public class AdminEventSearchParamsMapper {
                 .build();
     }
 
-    public EventSearchParams mapToEventSearchParams(
+    public static EventSearchParams mapToEventSearchParams(
             AdminSearchParams adminSearchParams,
             Integer from,
             Integer size

@@ -10,8 +10,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.HitDto;
 import ru.practicum.controller.params.EventGetByIdParams;
-import ru.practicum.controller.params.mapper.PublicEventSearchParamsMapper;
-import ru.practicum.controller.params.mapper.PublicSearchParamsMapper;
 import ru.practicum.controller.params.search.EventSearchParams;
 import ru.practicum.controller.params.search.PublicSearchParams;
 import ru.practicum.dto.event.EventFullDto;
@@ -25,6 +23,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static ru.practicum.controller.params.mapper.PublicEventSearchParamsMapper.mapToEventSearchParams;
+import static ru.practicum.controller.params.mapper.PublicSearchParamsMapper.mapToPublicSearchParams;
+
 @Slf4j
 @RestController
 @RequestMapping("/events")
@@ -34,8 +35,6 @@ public class PublicEventController {
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     private final EventService eventService;
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
-    private final PublicSearchParamsMapper publicSearchParamsMapper;
-    private final PublicEventSearchParamsMapper publicEventSearchParamsMapper;
 
     @GetMapping
     public List<EventShortDto> getAll(
@@ -56,8 +55,8 @@ public class PublicEventController {
             throw new IncorrectValueException("rangeStart of event can't be after rangeEnd");
         }
 
-        PublicSearchParams publicSearchParams = publicSearchParamsMapper.mapToPublicSearchParams(text, categories, paid, rangeStart, rangeEnd);
-        EventSearchParams eventSearchParams = publicEventSearchParamsMapper.mapToEventSearchParams(publicSearchParams, from, size);
+        PublicSearchParams publicSearchParams = mapToPublicSearchParams(text, categories, paid, rangeStart, rangeEnd);
+        EventSearchParams eventSearchParams = mapToEventSearchParams(publicSearchParams, from, size);
 
         HitDto hitDto = new HitDto(
                 null,

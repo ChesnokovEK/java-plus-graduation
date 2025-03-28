@@ -7,16 +7,11 @@ import ru.practicum.controller.params.search.PublicSearchParams;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static ru.practicum.controller.params.mapper.PublicSearchParamsMapper.mapToPublicSearchParams;
+
 @Component
 public class PublicEventSearchParamsMapper {
-
-    private final PublicSearchParamsMapper publicSearchParamsMapper;
-
-    public PublicEventSearchParamsMapper(PublicSearchParamsMapper publicSearchParamsMapper) {
-        this.publicSearchParamsMapper = publicSearchParamsMapper;
-    }
-
-    public EventSearchParams mapToEventSearchParams(
+    public static EventSearchParams mapToEventSearchParams(
             String text,
             List<Long> categories,
             Boolean paid,
@@ -25,7 +20,7 @@ public class PublicEventSearchParamsMapper {
             Integer from,
             Integer size
     ) {
-        PublicSearchParams publicSearchParams = publicSearchParamsMapper.mapToPublicSearchParams(
+        PublicSearchParams publicSearchParams = mapToPublicSearchParams(
                 text, categories, paid, rangeStart, rangeEnd
         );
 
@@ -36,7 +31,7 @@ public class PublicEventSearchParamsMapper {
                 .build();
     }
 
-    public EventSearchParams mapToEventSearchParams(
+    public static EventSearchParams mapToEventSearchParams(
             PublicSearchParams publicSearchParams,
             Integer from,
             Integer size

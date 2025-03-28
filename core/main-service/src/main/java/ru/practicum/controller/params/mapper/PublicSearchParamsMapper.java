@@ -9,7 +9,7 @@ import java.util.List;
 @Component
 public class PublicSearchParamsMapper {
 
-    public PublicSearchParams mapToPublicSearchParams(
+    public static PublicSearchParams mapToPublicSearchParams(
             String text,
             List<Long> categories,
             Boolean paid,

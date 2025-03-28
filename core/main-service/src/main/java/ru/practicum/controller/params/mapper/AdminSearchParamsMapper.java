@@ -10,7 +10,7 @@ import java.util.List;
 @Component
 public class AdminSearchParamsMapper {
 
-    public AdminSearchParams mapToAdminSearchParams(
+    public static AdminSearchParams mapToAdminSearchParams(
             List<Long> users,
             List<EventState> states,
             List<Long> categories,
