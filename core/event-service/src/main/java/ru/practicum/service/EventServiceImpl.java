@@ -303,7 +303,7 @@ public class EventServiceImpl implements EventService {
 
         if (searchParams.getAdminSearchParams().getCategories() != null) {
             booleanExpression = booleanExpression.and(
-                    event.categoryId.in(searchParams.getAdminSearchParams().getCategories()));
+                    event.category.id.in(searchParams.getAdminSearchParams().getCategories()));
         }
 
         if (searchParams.getAdminSearchParams().getStates() != null) {
