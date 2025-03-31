@@ -298,12 +298,12 @@ public class EventServiceImpl implements EventService {
 
         if (searchParams.getAdminSearchParams().getUsers() != null) {
             booleanExpression = booleanExpression.and(
-                    event.initiator.id.in(searchParams.getAdminSearchParams().getUsers()));
+                    event.initiatorId.in(searchParams.getAdminSearchParams().getUsers()));
         }
 
         if (searchParams.getAdminSearchParams().getCategories() != null) {
             booleanExpression = booleanExpression.and(
-                    event.category.id.in(searchParams.getAdminSearchParams().getCategories()));
+                    event.categoryId.in(searchParams.getAdminSearchParams().getCategories()));
         }
 
         if (searchParams.getAdminSearchParams().getStates() != null) {
