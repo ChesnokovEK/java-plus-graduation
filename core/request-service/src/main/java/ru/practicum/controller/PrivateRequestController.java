@@ -1,9 +1,12 @@
 package ru.practicum.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.dto.request.EventRequestStatusUpdateRequest;
+import ru.practicum.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.service.RequestService;
 
@@ -12,12 +15,12 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users/{userId}/requests")
+@RequestMapping("/users/{userId}")
 public class PrivateRequestController {
 
     private final RequestService requestService;
 
-    @PostMapping
+    @PostMapping("/requests")
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto create(
             @PathVariable long userId,
@@ -30,7 +33,7 @@ public class PrivateRequestController {
         return receivedRequestDto;
     }
 
-    @GetMapping
+    @GetMapping("/requests")
     public List<ParticipationRequestDto> getOwnRequests(
             @PathVariable long userId) {
         log.info("==> GET. /users/{userId}/requests " +
@@ -41,7 +44,7 @@ public class PrivateRequestController {
         return requestDtoList;
     }
 
-    @PatchMapping("/{requestId}/cancel")
+    @PatchMapping("/requests/{requestId}/cancel")
     public ParticipationRequestDto cancel(
             @PathVariable long userId,
             @PathVariable long requestId) {
@@ -53,4 +56,35 @@ public class PrivateRequestController {
         return receivedDto;
     }
 
+    @GetMapping("/events/{eventId}/requests")
+    public List<ParticipationRequestDto> getAllRequestsForOwnEvent(
+            @PathVariable long userId,
+            @PathVariable long eventId) {
+        log.info("==> GET. /users/{userId}/events/{eventId}/requests " +
+                "Getting requests for own event with id: {}, of user with id: {}", eventId, userId);
+
+        List<ParticipationRequestDto> receivedRequestsDtoList
+                = requestService.getAllForOwnEvent(userId, eventId);
+
+        log.info("<== GET. /users/{userId}/events/{eventId}/requests " +
+                "Returning requests for own event with id: {} of user with id: {}", eventId, userId);
+
+        return receivedRequestsDtoList;
+    }
+
+    @PatchMapping("/events/{eventId}/requests")
+    public EventRequestStatusUpdateResult updateRequestStatus(
+            @PathVariable long userId,
+            @PathVariable long eventId,
+            @RequestBody @Valid EventRequestStatusUpdateRequest updateRequestStatusDto) {
+
+        log.info("==> PATCH. /users/{userId}/events/{eventId}/requests " +
+                "Changing request status for own event with id: {} of user with id: {}", eventId, userId);
+        log.info("EventRequestStatusUpdateRequest. Deserialized body: {}", updateRequestStatusDto);
+        EventRequestStatusUpdateResult eventUpdateResult =
+                requestService.updateStatus(new PrivateUpdateRequestParams(userId, eventId, updateRequestStatusDto));
+        log.info("<== PATCH. /users/{userId}/events/{eventId}/requests " +
+                "Changed request status for own event with id: {} of user with id: {}", eventId, userId);
+        return eventUpdateResult;
+    }
 }

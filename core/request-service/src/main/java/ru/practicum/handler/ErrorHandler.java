@@ -42,7 +42,7 @@ public class ErrorHandler {
 
     @ExceptionHandler({DataAccessException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleIllegalArgumentException(final Exception e) {
+    public ApiError handleIllegalArgumentException(final Throwable e) {
         log.warn("Conflict", e);
         return createApiError(e, HttpStatus.CONFLICT);
     }
@@ -63,7 +63,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiError handleException(final Exception e) {
+    public ApiError handleException(final Throwable e) {
         log.warn("Error", e);
         return createApiError(e, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -82,7 +82,7 @@ public class ErrorHandler {
         return createApiError(e, HttpStatus.BAD_REQUEST);
     }
 
-    private ApiError createApiError(Exception e, HttpStatus status) {
+    private ApiError createApiError(Throwable e, HttpStatus status) {
         return new ApiError(
                 e.getStackTrace(),
                 e.getMessage(),

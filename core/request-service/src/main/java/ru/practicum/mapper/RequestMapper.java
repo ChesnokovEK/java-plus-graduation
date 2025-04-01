@@ -37,7 +37,4 @@ public abstract class RequestMapper {
         }
         return RequestStatus.PENDING;
     }
-
-
-
 }
