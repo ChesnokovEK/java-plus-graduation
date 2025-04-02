@@ -129,7 +129,6 @@ public class RequestServiceImpl implements RequestService {
         long confirmedRequestsCount = //Получение количества подвержденных запросов события.
                 requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, params.eventId());
 
-
         for (Request request : requestListOfEvent) {
             if (request.getStatus() != RequestStatus.PENDING) { // Проверка что все реквесты для изменения - в режиме подтверждения
                 throw new ConflictException("Request status is not PENDING");
@@ -138,7 +137,9 @@ public class RequestServiceImpl implements RequestService {
             if (confirmedRequestsCount >= event.participantLimit()) { // Проверка что количество подтвержденных реквестов не больше лимита
                 throw new ConflictException("Participant limit exceeded");
             }
+        }
 
+        for (Request request : requestListOfEvent) {
             if (event.requestModeration()) { // Проверка необходимости модерации
                 String status = params.eventRequestStatusUpdateRequest().status().toString();
                 log.debug("State for update: {}", status);
