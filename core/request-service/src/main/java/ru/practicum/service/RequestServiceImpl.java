@@ -135,7 +135,8 @@ public class RequestServiceImpl implements RequestService {
                 throw new ConflictException("Request status is not PENDING");
             }
 
-            if (confirmedRequestsCount >= event.participantLimit()) { // Проверка что количество подтвержденных реквестов не больше лимита                throw new ConflictException("Participant limit exceeded");
+            if (confirmedRequestsCount >= event.participantLimit()) { // Проверка что количество подтвержденных реквестов не больше лимита
+                throw new ConflictException("Participant limit exceeded");
             }
 
             if (event.requestModeration()) { // Проверка необходимости модерации
