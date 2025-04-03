@@ -131,7 +131,6 @@ public class RequestServiceImpl implements RequestService {
                 requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, params.eventId());
 
         List<Long> requestToConfirm = new ArrayList<>();
-        List<Long> requestToCancel = new ArrayList<>();
 
         for (Request request : requestListOfEvent) {
             if (request.getStatus() != RequestStatus.PENDING) { // Проверка что все реквесты для изменения - в режиме подтверждения
@@ -152,12 +151,11 @@ public class RequestServiceImpl implements RequestService {
                 }
 
                 if (confirmedRequestsCount >= event.participantLimit()) { //проверка счетчика на превышение, отмена остальных реквестов
-                    requestToCancel.add(request.getId());
+                    requestRepository.cancelNewRequestsStatus(event.id());
                 }
             }
         }
         requestRepository.updateStatusByRequestIds(params.eventRequestStatusUpdateRequest().status().toString(), requestToConfirm);
-        requestRepository.updateStatusByRequestIds(RequestStatus.REJECTED.toString(), requestToCancel);
         List<Request> eventRequestList = requestRepository.findAll();
 
         List<ParticipationRequestDto> confirmedRequestsDtoList =
