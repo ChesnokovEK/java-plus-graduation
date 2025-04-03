@@ -1,6 +1,6 @@
 package ru.practicum.service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -66,6 +66,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getAllOwnRequests(long userId) {
         log.debug("method getAllOwnRequests with user {}", userId);
         userServiceClient.checkExistence(userId);
@@ -90,6 +91,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getAllForOwnEvent(long userId, long eventId) {
         UserDto user = userServiceClient.getById(userId);
         EventFullDto event = eventServiceClient.getById(eventId);
