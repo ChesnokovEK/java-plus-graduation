@@ -25,6 +25,10 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     void updateStatus(String status, long requestId);
 
     @Modifying(clearAutomatically = true)
+    @Query(value = "UPDATE REQUESTS SET STATUS = ?1 WHERE REQUEST_ID IN ?2", nativeQuery = true)
+    void updateStatusByRequestIds(String status, List<Long> requestIds);
+
+    @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE REQUESTS SET STATUS = 'CANCELED' WHERE EVENT_ID = ?1 AND STATUS = 'PENDING'", nativeQuery = true)
     void cancelNewRequestsStatus(long eventId);
 
