@@ -20,6 +20,7 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.RequestMapper;
 import ru.practicum.repository.RequestRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -126,52 +127,52 @@ public class RequestServiceImpl implements RequestService {
                 requestRepository.findAllByIdInAndEventId(
                         params.eventRequestStatusUpdateRequest().requestIds(), params.eventId());
 
-        long confirmedRequestsCount = //Получение количества подтвержденных запросов события.
+        long confirmedRequestsCount = //Получение количества подвержденных запросов события.
                 requestRepository.countByStatusAndEventId(RequestStatus.CONFIRMED, params.eventId());
 
-        if ((event.participantLimit() - (confirmedRequestsCount) - params.eventRequestStatusUpdateRequest().requestIds().size()) >= 0) {
-            throw new ConflictException("Participant limit exceeded");
-        }
-
-        List<Long> requestIds = requestListOfEvent.stream().map(Request::getId).toList();
+        List<Long> requestToConfirm = new ArrayList<>();
+        List<Long> requestToCancel = new ArrayList<>();
 
         for (Request request : requestListOfEvent) {
             if (request.getStatus() != RequestStatus.PENDING) { // Проверка что все реквесты для изменения - в режиме подтверждения
                 throw new ConflictException("Request status is not PENDING");
             }
-        }
 
-        if (event.requestModeration()) {
-            String status = params.eventRequestStatusUpdateRequest().status().toString();
-            log.debug("State for update: {}", status);
-            requestRepository.updateStatusByRequestIds(status, requestIds);
-            List<Request> modifiedRequests = requestRepository.findAllByIdInAndEventId(
-                    requestIds, event.id());
-            if (modifiedRequests.stream()
-                    .filter(request -> request.getStatus() == RequestStatus.CONFIRMED)
-                    .count() > event.participantLimit()
-            ) {
-                requestRepository.cancelNewRequestsStatus(event.id());
+            if (confirmedRequestsCount >= event.participantLimit()) { // Проверка что количество подтвержденных реквестов не больше лимита
+                throw new ConflictException("Participant limit exceeded");
+            }
+
+            if (event.requestModeration()) { // Проверка необходимости модерации
+                String status = params.eventRequestStatusUpdateRequest().status().toString();
+                log.debug("State for update: {}", params.eventRequestStatusUpdateRequest().status());
+                requestToConfirm.add(request.getId());
+
+                if (params.eventRequestStatusUpdateRequest().status() == RequestStatus.CONFIRMED) { //увеличение счетчика подтвержденных событий, в случае потверждения
+                    confirmedRequestsCount++;
+                }
+
+                if (confirmedRequestsCount >= event.participantLimit()) { //проверка счетчика на превышение, отмена остальных реквестов
+                    requestToCancel.add(request.getId());
+                }
             }
         }
+        requestRepository.updateStatusByRequestIds(params.eventRequestStatusUpdateRequest().status().toString(), requestToConfirm);
+        requestRepository.updateStatusByRequestIds(RequestStatus.REJECTED.toString(), requestToCancel);
+        List<Request> eventRequestList = requestRepository.findAll();
 
         List<ParticipationRequestDto> confirmedRequestsDtoList =
-                requestRepository.findAllByStatus(RequestStatus.CONFIRMED)
+                eventRequestList
                         .stream()
-                        .filter(request -> request.getEventId().equals(event.id()))
+                        .filter(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
+                        .filter(request -> request.getEventId().equals(params.eventId()))
                         .map(requestMapper::toParticipationRequestDto)
                         .toList();
-        List<Request> rejectedRequests = requestRepository.findAllByStatus(RequestStatus.REJECTED);
-        for (Request request : rejectedRequests) {
-            log.debug("{} id, status: {}", request.getId(), request.getStatus());
-        }
 
-        List<ParticipationRequestDto> rejectedRequestsDtoList =
-                rejectedRequests
-                        .stream()
-                        .filter(request -> request.getEventId().equals(event.id()))
-                        .map(requestMapper::toParticipationRequestDto)
-                        .toList();
+        List<ParticipationRequestDto> rejectedRequestsDtoList = eventRequestList
+                .stream()
+                .filter(request -> request.getStatus().equals(RequestStatus.REJECTED))
+                .map(requestMapper::toParticipationRequestDto)
+                .toList();
 
         return new EventRequestStatusUpdateResult(confirmedRequestsDtoList, rejectedRequestsDtoList);
     }
