@@ -24,7 +24,6 @@ import ru.practicum.enums.RequestStatus;
 import ru.practicum.enums.StateAction;
 import ru.practicum.exception.AccessException;
 import ru.practicum.exception.ConflictException;
-import ru.practicum.exception.IncorrectValueException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.EventMapper;
 import ru.practicum.mapper.LocationMapper;
@@ -382,92 +381,6 @@ public class EventServiceImpl implements EventService {
         }
         return eventMapper.eventToEventFullDto(receivedEvent);
     }
-
-//    @Override
-//    public EventFullDto update(long eventId, EventUpdateParams updateParams) {
-//        Event event = eventRepository.findById(eventId)
-//                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
-//
-//        Event updatedEvent;
-//
-//        if (updateParams.updateEventUserRequest() != null) { // private section
-//            userServiceClient.checkExistence(updateParams.userId());
-//
-//            if (updateParams.updateEventUserRequest().category() != null) {
-//                Category category = categoryRepository.findById(updateParams.updateEventUserRequest().category())
-//                        .orElseThrow(() -> new NotFoundException(
-//                                "Category with id " + updateParams.updateEventUserRequest().category() + " not found"));
-//                event.setCategory(category);
-//            }
-//            if (!updateParams.userId().equals(event.getInitiatorId())) {
-//                throw new AccessException("User with id = " + updateParams.userId() + " do not initiate this event");
-//            }
-//
-//            if (event.getState() != EventState.PENDING && event.getState() != EventState.CANCELED) {
-//                throw new ConflictException(
-//                        "User. Cannot update event: only pending or canceled events can be changed");
-//            }
-//
-//            LocalDateTime eventDate = updateParams.updateEventUserRequest().eventDate();
-//
-//            if (eventDate != null &&
-//                    eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
-//                throw new ConflictException(
-//                        "User. Cannot update event: event date must be not earlier then after 2 hours ");
-//            }
-//
-//            StateAction stateAction = updateParams.updateEventUserRequest().stateAction();
-//            log.debug("State action received from params: {}", stateAction);
-//
-//            if (stateAction != null) {
-//                switch (stateAction) {
-//                    case CANCEL_REVIEW -> event.setState(EventState.CANCELED);
-//
-//                    case SEND_TO_REVIEW -> {
-//                        event.setState(EventState.PENDING);
-//                    }
-//                }
-//            }
-//
-//            log.debug("Private. Событие до мапинга: {}", event);
-//            eventMapper.updateEventUserRequestToEvent(event, updateParams.updateEventUserRequest());
-//            log.debug("Private. Событие после мапинга для сохранения: {}", event);
-//
-//        }
-//
-//        if (updateParams.updateEventAdminRequest() != null) { // admin section
-//
-//            if (updateParams.updateEventAdminRequest().category() != null) {
-//                Category category  = categoryRepository.findById(updateParams.updateEventAdminRequest().category())
-//                        .orElseThrow(() -> new NotFoundException(
-//                                "Category with id " + updateParams.updateEventAdminRequest().category() + " not found"));
-//                event.setCategory(category);
-//            }
-//
-//            if (event.getState() != EventState.PENDING) {
-//                throw new ConflictException("Admin. Cannot update event: only pending events can be changed");
-//            }
-//
-//            if (updateParams.updateEventAdminRequest().eventDate() != null &&
-//                    updateParams.updateEventAdminRequest().eventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-//                throw new IncorrectValueException(
-//                        "Admin. Cannot update event: event date must be not earlier then after 2 hours ");
-//            }
-//            log.debug("Admin. Событие до мапинга: {}; {}", event.getId(), event.getState());
-//            eventMapper.updateEventAdminRequestToEvent(event, updateParams.updateEventAdminRequest());
-//            log.debug("Admin. Событие после мапинга для сохранения: {}, {}", event.getId(), event.getState());
-//
-//        }
-//        event.setId(eventId);
-//
-//        updatedEvent = eventRepository.save(event);
-//
-//        updatedEvent.setLikes(eventRepository.countLikesByEventId(updatedEvent.getId()));
-//
-//        log.debug("Событие возвращенное из базы: {} ; {}", event.getId(), event.getState());
-//
-//        return eventMapper.eventToEventFullDto(updatedEvent);
-//    }
 
     @Override
     public EventFullDto update(long eventId, EventUpdateParams updateParams) {
