@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.user.UserCreateDto;
 import ru.practicum.dto.user.UserDto;
@@ -30,6 +31,7 @@ public interface UserServiceClient {
     UserDto add(@RequestBody @Valid UserCreateDto userCreateDto);
 
     @GetMapping("/admin/users")
+    @Validated
     List<UserDto> getAll(
             @RequestParam(required = false) Long[] ids,
             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
