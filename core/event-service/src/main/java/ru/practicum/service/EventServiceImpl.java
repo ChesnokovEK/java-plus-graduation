@@ -16,9 +16,7 @@ import ru.practicum.controller.params.EventGetByIdParams;
 import ru.practicum.controller.params.EventUpdateParams;
 import ru.practicum.controller.params.search.EventSearchParams;
 import ru.practicum.controller.params.search.PublicSearchParams;
-import ru.practicum.dto.event.EventFullDto;
-import ru.practicum.dto.event.EventShortDto;
-import ru.practicum.dto.event.NewEventDto;
+import ru.practicum.dto.event.*;
 import ru.practicum.dto.user.UserDto;
 import ru.practicum.entity.*;
 import ru.practicum.enums.EventState;
@@ -385,96 +383,114 @@ public class EventServiceImpl implements EventService {
         return eventMapper.eventToEventFullDto(receivedEvent);
     }
 
+//    @Override
+//    public EventFullDto update(long eventId, EventUpdateParams updateParams) {
+//        Event event = eventRepository.findById(eventId)
+//                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+//
+//        Event updatedEvent;
+//
+//        if (updateParams.updateEventUserRequest() != null) { // private section
+//            userServiceClient.checkExistence(updateParams.userId());
+//
+//            if (updateParams.updateEventUserRequest().category() != null) {
+//                Category category = categoryRepository.findById(updateParams.updateEventUserRequest().category())
+//                        .orElseThrow(() -> new NotFoundException(
+//                                "Category with id " + updateParams.updateEventUserRequest().category() + " not found"));
+//                event.setCategory(category);
+//            }
+//            if (!updateParams.userId().equals(event.getInitiatorId())) {
+//                throw new AccessException("User with id = " + updateParams.userId() + " do not initiate this event");
+//            }
+//
+//            if (event.getState() != EventState.PENDING && event.getState() != EventState.CANCELED) {
+//                throw new ConflictException(
+//                        "User. Cannot update event: only pending or canceled events can be changed");
+//            }
+//
+//            LocalDateTime eventDate = updateParams.updateEventUserRequest().eventDate();
+//
+//            if (eventDate != null &&
+//                    eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
+//                throw new ConflictException(
+//                        "User. Cannot update event: event date must be not earlier then after 2 hours ");
+//            }
+//
+//            StateAction stateAction = updateParams.updateEventUserRequest().stateAction();
+//            log.debug("State action received from params: {}", stateAction);
+//
+//            if (stateAction != null) {
+//                switch (stateAction) {
+//                    case CANCEL_REVIEW -> event.setState(EventState.CANCELED);
+//
+//                    case SEND_TO_REVIEW -> {
+//                        event.setState(EventState.PENDING);
+//                    }
+//                }
+//            }
+//
+//            log.debug("Private. Событие до мапинга: {}", event);
+//            eventMapper.updateEventUserRequestToEvent(event, updateParams.updateEventUserRequest());
+//            log.debug("Private. Событие после мапинга для сохранения: {}", event);
+//
+//        }
+//
+//        if (updateParams.updateEventAdminRequest() != null) { // admin section
+//
+//            if (updateParams.updateEventAdminRequest().category() != null) {
+//                Category category  = categoryRepository.findById(updateParams.updateEventAdminRequest().category())
+//                        .orElseThrow(() -> new NotFoundException(
+//                                "Category with id " + updateParams.updateEventAdminRequest().category() + " not found"));
+//                event.setCategory(category);
+//            }
+//
+//            if (event.getState() != EventState.PENDING) {
+//                throw new ConflictException("Admin. Cannot update event: only pending events can be changed");
+//            }
+//
+//            if (updateParams.updateEventAdminRequest().eventDate() != null &&
+//                    updateParams.updateEventAdminRequest().eventDate().isBefore(LocalDateTime.now().plusHours(1))) {
+//                throw new IncorrectValueException(
+//                        "Admin. Cannot update event: event date must be not earlier then after 2 hours ");
+//            }
+//            log.debug("Admin. Событие до мапинга: {}; {}", event.getId(), event.getState());
+//            eventMapper.updateEventAdminRequestToEvent(event, updateParams.updateEventAdminRequest());
+//            log.debug("Admin. Событие после мапинга для сохранения: {}, {}", event.getId(), event.getState());
+//
+//        }
+//        event.setId(eventId);
+//
+//        updatedEvent = eventRepository.save(event);
+//
+//        updatedEvent.setLikes(eventRepository.countLikesByEventId(updatedEvent.getId()));
+//
+//        log.debug("Событие возвращенное из базы: {} ; {}", event.getId(), event.getState());
+//
+//        return eventMapper.eventToEventFullDto(updatedEvent);
+//    }
+
     @Override
     public EventFullDto update(long eventId, EventUpdateParams updateParams) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+        Event event = findEventOrThrow(eventId);
 
-        Event updatedEvent;
-
-        if (updateParams.updateEventUserRequest() != null) { // private section
-            userServiceClient.checkExistence(updateParams.userId());
-
-            if (updateParams.updateEventUserRequest().category() != null) {
-                Category category = categoryRepository.findById(updateParams.updateEventUserRequest().category())
-                        .orElseThrow(() -> new NotFoundException(
-                                "Category with id " + updateParams.updateEventUserRequest().category() + " not found"));
-                event.setCategory(category);
-            }
-            if (!updateParams.userId().equals(event.getInitiatorId())) {
-                throw new AccessException("User with id = " + updateParams.userId() + " do not initiate this event");
-            }
-
-            if (event.getState() != EventState.PENDING && event.getState() != EventState.CANCELED) {
-                throw new ConflictException(
-                        "User. Cannot update event: only pending or canceled events can be changed");
-            }
-
-            LocalDateTime eventDate = updateParams.updateEventUserRequest().eventDate();
-
-            if (eventDate != null &&
-                    eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
-                throw new ConflictException(
-                        "User. Cannot update event: event date must be not earlier then after 2 hours ");
-            }
-
-            StateAction stateAction = updateParams.updateEventUserRequest().stateAction();
-            log.debug("State action received from params: {}", stateAction);
-
-            if (stateAction != null) {
-                switch (stateAction) {
-                    case CANCEL_REVIEW -> event.setState(EventState.CANCELED);
-
-                    case SEND_TO_REVIEW -> {
-                        event.setState(EventState.PENDING);
-                    }
-                }
-            }
-
-            log.debug("Private. Событие до мапинга: {}", event);
-            eventMapper.updateEventUserRequestToEvent(event, updateParams.updateEventUserRequest());
-            log.debug("Private. Событие после мапинга для сохранения: {}", event);
-
+        if (updateParams.updateEventUserRequest() != null) {
+            handleUserUpdate(event, updateParams);
         }
 
-        if (updateParams.updateEventAdminRequest() != null) { // admin section
-
-            if (updateParams.updateEventAdminRequest().category() != null) {
-                Category category  = categoryRepository.findById(updateParams.updateEventAdminRequest().category())
-                        .orElseThrow(() -> new NotFoundException(
-                                "Category with id " + updateParams.updateEventAdminRequest().category() + " not found"));
-                event.setCategory(category);
-            }
-
-            if (event.getState() != EventState.PENDING) {
-                throw new ConflictException("Admin. Cannot update event: only pending events can be changed");
-            }
-
-            if (updateParams.updateEventAdminRequest().eventDate() != null &&
-                    updateParams.updateEventAdminRequest().eventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-                throw new IncorrectValueException(
-                        "Admin. Cannot update event: event date must be not earlier then after 2 hours ");
-            }
-            log.debug("Admin. Событие до мапинга: {}; {}", event.getId(), event.getState());
-            eventMapper.updateEventAdminRequestToEvent(event, updateParams.updateEventAdminRequest());
-            log.debug("Admin. Событие после мапинга для сохранения: {}, {}", event.getId(), event.getState());
-
+        if (updateParams.updateEventAdminRequest() != null) {
+            handleAdminUpdate(event, updateParams);
         }
+
         event.setId(eventId);
-
-        updatedEvent = eventRepository.save(event);
-
-        updatedEvent.setLikes(eventRepository.countLikesByEventId(updatedEvent.getId()));
+        Event updatedEvent = saveAndUpdateLikes(event);
 
         log.debug("Событие возвращенное из базы: {} ; {}", event.getId(), event.getState());
-
         return eventMapper.eventToEventFullDto(updatedEvent);
     }
 
     @Override
     public EventShortDto addLike(long userId, long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+        Event event = findEventOrThrow(eventId);
         if (event.getState() != EventState.PUBLISHED) {
             throw new ConflictException("Event with id " + eventId + " is not published");
         }
@@ -485,8 +501,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void deleteLike(long userId, long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+        Event event = findEventOrThrow(eventId);
         boolean isLikeExist = eventRepository.checkLikeExisting(userId, eventId);
         if (isLikeExist) {
             eventRepository.deleteLike(userId, eventId);
@@ -497,9 +512,89 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto getByIdInternal(long eventId) {
-        Event savedEvent = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+        Event savedEvent = findEventOrThrow(eventId);
         savedEvent.setInitiator(userServiceClient.getById(savedEvent.getInitiatorId()));
         return eventMapper.eventToEventFullDto(savedEvent);
+    }
+
+    private Event findEventOrThrow(long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+    }
+
+    private void handleUserUpdate(Event event, EventUpdateParams updateParams) {
+        UpdateEventUserRequest userData = updateParams.updateEventUserRequest();
+        validateUserExists(updateParams.userId());
+        validateUserIsInitiator(event, updateParams.userId());
+
+        updateCategory(event, userData.category());
+        validateEventStateForUser(event);
+        validateEventDate(userData.eventDate(), 2, "User");
+        applyUserStateAction(event, userData.stateAction());
+
+        eventMapper.updateEventUserRequestToEvent(event, userData);
+        log.debug("Private. Событие после мапинга: {}", event);
+    }
+
+    private void handleAdminUpdate(Event event, EventUpdateParams updateParams) {
+        UpdateEventAdminRequest adminData = updateParams.updateEventAdminRequest();
+        updateCategory(event, adminData.category());
+
+        validateEventStateForAdmin(event);
+        validateEventDate(adminData.eventDate(), 1, "Admin");
+
+        eventMapper.updateEventAdminRequestToEvent(event, adminData);
+        log.debug("Admin. Событие после мапинга: {}", event.getId(), event.getState());
+    }
+
+    private void validateUserExists(Long userId) {
+        userServiceClient.checkExistence(userId);
+    }
+
+    private void validateUserIsInitiator(Event event, Long userId) {
+        if (!userId.equals(event.getInitiatorId())) {
+            throw new AccessException("User with id = " + userId + " is not the initiator");
+        }
+    }
+
+    private void validateEventStateForUser(Event event) {
+        if (event.getState() != EventState.PENDING && event.getState() != EventState.CANCELED) {
+            throw new ConflictException("User. Only pending or canceled events can be changed");
+        }
+    }
+
+    private void validateEventStateForAdmin(Event event) {
+        if (event.getState() != EventState.PENDING) {
+            throw new ConflictException("Admin. Only pending events can be changed");
+        }
+    }
+
+    private void validateEventDate(LocalDateTime eventDate, int hours, String role) {
+        if (eventDate != null && eventDate.isBefore(LocalDateTime.now().plusHours(hours))) {
+            throw new ConflictException(role + ". Event date must be at least " + hours + " hours from now");
+        }
+    }
+
+    private void applyUserStateAction(Event event, StateAction stateAction) {
+        if (stateAction == null) return;
+
+        switch (stateAction) {
+            case CANCEL_REVIEW -> event.setState(EventState.CANCELED);
+            case SEND_TO_REVIEW -> event.setState(EventState.PENDING);
+        }
+    }
+
+    private void updateCategory(Event event, Long categoryId) {
+        if (categoryId == null) return;
+
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category with id " + categoryId + " not found"));
+        event.setCategory(category);
+    }
+
+    private Event saveAndUpdateLikes(Event event) {
+        Event savedEvent = eventRepository.save(event);
+        savedEvent.setLikes(eventRepository.countLikesByEventId(savedEvent.getId()));
+        return savedEvent;
     }
 }
