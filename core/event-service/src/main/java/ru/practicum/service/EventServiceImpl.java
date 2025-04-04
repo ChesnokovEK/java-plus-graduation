@@ -7,9 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.HitDto;
-import ru.practicum.HitStatDto;
-import ru.practicum.StatClient;
+import ru.practicum.AnalyzerClient;
 import ru.practicum.client.RequestServiceClient;
 import ru.practicum.client.UserServiceClient;
 import ru.practicum.controller.params.EventGetByIdParams;
@@ -22,6 +20,7 @@ import ru.practicum.entity.*;
 import ru.practicum.enums.EventState;
 import ru.practicum.enums.RequestStatus;
 import ru.practicum.enums.StateAction;
+import ru.practicum.ewm.stats.proto.RecommendationsMessages;
 import ru.practicum.exception.AccessException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
@@ -50,7 +49,7 @@ public class EventServiceImpl implements EventService {
     private final RequestServiceClient requestServiceClient;
     private final LocationMapper locationMapper;
 
-    private final StatClient statClient;
+    private final AnalyzerClient analyzerClient;
 
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(TIMESTAMP_PATTERN);
 
@@ -104,7 +103,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventShortDto> getAllByPublic(EventSearchParams searchParams, HitDto hitDto) {
+    public List<EventShortDto> getAllByPublic(EventSearchParams searchParams) {
 
         Pageable page = PageRequest.of(searchParams.getFrom(), searchParams.getSize());
 
@@ -158,22 +157,12 @@ public class EventServiceImpl implements EventService {
 
         List<Event> eventListBySearch = eventRepository.findAll(booleanExpression, page).getContent();
 
-        statClient.saveHit(hitDto);
-
         if (eventListBySearch.isEmpty()) return Collections.emptyList();
 
         List<Long> eventIds = new ArrayList<>();
 
         for (Event event : eventListBySearch) {
-            List<HitStatDto> hitStatDtoList = statClient.getStats(
-                    rangeStart.format(dateTimeFormatter),
-                    rangeEnd.format(dateTimeFormatter),
-                    List.of("/event/" + event.getId()),
-                    false);
             Long view = 0L;
-            for (HitStatDto hitStatDto : hitStatDtoList) {
-                view += hitStatDto.getHits();
-            }
             eventIds.add(event.getId());
             event.setViews(view);
         }
@@ -199,30 +188,26 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventShortDto> getTopEvent(Integer count, HitDto hitDto) {
+    public List<EventShortDto> getTopEvent(Integer count) {
+        List<Event> eventTopList = getTopEvents(count);
+        return eventTopList.stream()
+                .map(eventMapper::eventToEventShortDto)
+                .toList();
+    }
 
-        String rangeEnd = LocalDateTime.now().format(dateTimeFormatter);
-        String rangeStart = LocalDateTime.now().minusYears(100).format(dateTimeFormatter);
-
-        List<Event> eventListBySearch = eventRepository.findTop(count);
-        if (eventListBySearch.isEmpty()) return Collections.emptyList();
+    private List<Event> getTopEvents(Integer count) {
+        List<Event> eventTopList = eventRepository.findTop(count);
+        if (eventTopList.isEmpty()) return Collections.emptyList();
 
         List<Long> eventIds = new ArrayList<>();
 
-        statClient.saveHit(hitDto);
-
-        for (Event event : eventListBySearch) {
-            List<HitStatDto> hitStatDtoList = statClient.getStats(
-                    rangeStart,
-                    rangeEnd,
-                    List.of("/event/" + event.getId()),
-                    true);
-            Long view = 0L;
-            for (HitStatDto hitStatDto : hitStatDtoList) {
-                view += hitStatDto.getHits();
-            }
+        for (Event event : eventTopList) {
             eventIds.add(event.getId());
-            event.setViews(view);
+            double rate = analyzerClient.getInteractionsCount(List.of(event.getId()))
+                    .findFirst()
+                    .map(RecommendationsMessages.RecommendedEventProto::getScore)
+                    .orElse(0.0);
+            event.setRating(rate);
         }
 
         Map<Long, Long> confirmedRequestsMap = requestServiceClient.countByStatusAndEventsIds(
@@ -234,56 +219,50 @@ public class EventServiceImpl implements EventService {
                         data -> (Long) data[0],
                         data -> (Long) data[1]));
 
-        for (Event event : eventListBySearch) {
+        for (Event event : eventTopList) {
             event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
             event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
         }
 
-        return eventListBySearch.stream()
-                .map(eventMapper::eventToEventShortDto)
-                .toList();
+        return eventTopList;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<EventShortDto> getTopViewEvent(Integer count, HitDto hitDto) {
-
-        String rangeEnd = LocalDateTime.now().format(dateTimeFormatter);
-        String rangeStart = LocalDateTime.now().minusYears(100).format(dateTimeFormatter);
-
-        statClient.saveHit(hitDto);
-
-        List<HitStatDto> hitStatDtoList = statClient.getStats(
-                rangeStart,
-                rangeEnd,
-                null,
-                true);
-
-        Map<Long, Long> idsMap = hitStatDtoList.stream().filter(it -> it.getUri().matches("\\/events\\/\\d+$"))
-                        .collect((Collectors.groupingBy(dto ->
-                                Long.parseLong(dto.getUri().replace("/events/", "")),
-                                Collectors.summingLong(HitStatDto::getHits))));
-
-        Set<Long> ids = idsMap.keySet();
-        List<Event> eventListBySearch = eventRepository.findAllById(ids);
-        List<Event> result = new ArrayList<>();
-        idsMap.entrySet().stream()
-                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-                .limit(count)
-                .forEach(it -> {
-                            Optional<Event> e = eventListBySearch.stream().filter(event ->
-                                    event.getId() == it.getKey()).findFirst();
-                            if (e.isPresent()) {
-                                Event eventRes = e.get();
-                                eventRes.setViews(it.getValue());
-                                result.add(eventRes);
-                            }
-                        }
-                );
-        return result.stream()
-                .map(eventMapper::eventToEventShortDto)
-                .toList();
-    }
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<EventShortDto> getTopEvent(Integer count) {
+//
+//        List<Event> eventListBySearch = eventRepository.findTop(count);
+//        if (eventListBySearch.isEmpty()) return Collections.emptyList();
+//
+//        List<Long> eventIds = new ArrayList<>();
+//
+//        for (Event event : eventListBySearch) {
+//            eventIds.add(event.getId());
+//            double rate = analyzerClient.getInteractionsCount(List.of(event.getId()))
+//                    .findFirst()
+//                    .map(RecommendationsMessages.RecommendedEventProto::getScore)
+//                    .orElse(0.0);
+//            event.setRating(rate);
+//        }
+//
+//        Map<Long, Long> confirmedRequestsMap = requestServiceClient.countByStatusAndEventsIds(
+//                        RequestStatus.CONFIRMED, eventIds);
+//
+//        Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
+//                .stream()
+//                .collect(Collectors.toMap(
+//                        data -> (Long) data[0],
+//                        data -> (Long) data[1]));
+//
+//        for (Event event : eventListBySearch) {
+//            event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
+//            event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
+//        }
+//
+//        return eventListBySearch.stream()
+//                .map(eventMapper::eventToEventShortDto)
+//                .toList();
+//    }
 
     @Override
     @Transactional(readOnly = true)
@@ -354,7 +333,16 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    public EventFullDto getById(EventGetByIdParams params, HitDto hitDto) {
+    public List<EventShortDto> getTopViewEvent(Integer count) {
+        List<Event> eventTopList = getTopEvents(count);
+        return eventTopList.stream()
+                .map(eventMapper::eventToEventShortDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EventFullDto getById(EventGetByIdParams params) {
         Event receivedEvent;
         if (params.initiatorId() != null) {
             userServiceClient.checkExistence(params.initiatorId());
@@ -365,16 +353,7 @@ public class EventServiceImpl implements EventService {
         } else {
             receivedEvent = eventRepository.findById(params.eventId())
                     .orElseThrow(() -> new NotFoundException("Event with id " + params.eventId() + " not found"));
-            statClient.saveHit(hitDto);
 
-            List<HitStatDto> hitStatDtoList = statClient.getStats(
-                        "", "", List.of("/events/" + params.eventId()), true
-            );
-            Long view = 0L;
-            for (HitStatDto hitStatDto : hitStatDtoList) {
-                view += hitStatDto.getHits();
-            }
-            receivedEvent.setViews(view);
             receivedEvent.setConfirmedRequests(
                     requestServiceClient.countByStatusAndEventId(RequestStatus.CONFIRMED, receivedEvent.getId()));
             receivedEvent.setLikes(eventRepository.countLikesByEventId(receivedEvent.getId()));
