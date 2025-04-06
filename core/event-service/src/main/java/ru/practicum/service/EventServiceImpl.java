@@ -39,6 +39,7 @@ import static ru.practicum.utils.Constants.TIMESTAMP_PATTERN;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
