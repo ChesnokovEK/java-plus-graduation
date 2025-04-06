@@ -227,43 +227,6 @@ public class EventServiceImpl implements EventService {
         return eventTopList;
     }
 
-//    @Override
-//    @Transactional(readOnly = true)
-//    public List<EventShortDto> getTopEvent(Integer count) {
-//
-//        List<Event> eventListBySearch = eventRepository.findTop(count);
-//        if (eventListBySearch.isEmpty()) return Collections.emptyList();
-//
-//        List<Long> eventIds = new ArrayList<>();
-//
-//        for (Event event : eventListBySearch) {
-//            eventIds.add(event.getId());
-//            double rate = analyzerClient.getInteractionsCount(List.of(event.getId()))
-//                    .findFirst()
-//                    .map(RecommendationsMessages.RecommendedEventProto::getScore)
-//                    .orElse(0.0);
-//            event.setRating(rate);
-//        }
-//
-//        Map<Long, Long> confirmedRequestsMap = requestServiceClient.countByStatusAndEventsIds(
-//                        RequestStatus.CONFIRMED, eventIds);
-//
-//        Map<Long, Long> likesMap = eventRepository.findLikesCountByEventIds(eventIds)
-//                .stream()
-//                .collect(Collectors.toMap(
-//                        data -> (Long) data[0],
-//                        data -> (Long) data[1]));
-//
-//        for (Event event : eventListBySearch) {
-//            event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
-//            event.setLikes(likesMap.getOrDefault(event.getId(), 0L));
-//        }
-//
-//        return eventListBySearch.stream()
-//                .map(eventMapper::eventToEventShortDto)
-//                .toList();
-//    }
-
     @Override
     @Transactional(readOnly = true)
     public List<EventFullDto> getAllByAdmin(EventSearchParams searchParams) {
