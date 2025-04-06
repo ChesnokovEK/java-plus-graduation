@@ -75,7 +75,6 @@ public class RecommendationService {
             long eventB = similarity.getEventB();
             float score = similarity.getScore();
 
-            // Проверяем, если eventA или eventB относятся к recent events
             if (events.contains(eventA)) {
                 long other = eventB;
                 if (!interacted.contains(other)) {
@@ -90,22 +89,6 @@ public class RecommendationService {
             }
         }
 
-//
-//        for (UserAction r : recent) {
-//            long ev = r.getEventId();
-//            List<EventSimilarity> simList = similarityRepo.findByEventAOrEventB(ev, ev);
-//            for (EventSimilarity e : simList) {
-//                long other = (e.getEventA() == ev) ? e.getEventB() : e.getEventA();
-//                if (interacted.contains(other)) {
-//                    continue;
-//                }
-//                float oldVal = bestScoreMap.getOrDefault(other, 0f);
-//                if (e.getScore() > oldVal) {
-//                    bestScoreMap.put(other, e.getScore());
-//                }
-//            }
-//        }
-
         return bestScoreMap.entrySet().stream()
                 .map(e -> new RecommendedEvent(e.getKey(), e.getValue()))
                 .sorted(Comparator.comparingDouble(RecommendedEvent::score).reversed())
@@ -115,15 +98,19 @@ public class RecommendationService {
 
     public List<RecommendedEvent> getInteractionsCount(RecommendationsMessages.InteractionsCountRequestProto request) {
         List<Long> events = request.getEventIdList();
-        List<RecommendedEvent> result = new ArrayList<>();
 
-        for (Long e : events) {
-            List<UserAction> list = userActionRepo.findByEventId(e);
-            double sum = 0.0;
-            for (UserAction uae : list) {
-                sum += uae.getMaxWeight();
-            }
-            result.add(new RecommendedEvent(e, (float) sum));
+        List<UserAction> allUserActions = userActionRepo.findByEventIdIn(events);
+
+        Map<Long, Double> sumMap = new HashMap<>();
+        for (UserAction ua : allUserActions) {
+            long eventId = ua.getEventId();
+            sumMap.merge(eventId, ua.getMaxWeight(), Double::sum);
+        }
+
+        List<RecommendedEvent> result = new ArrayList<>();
+        for (Long eventId : events) {
+            double sum = sumMap.getOrDefault(eventId, 0.0);
+            result.add(new RecommendedEvent(eventId, (float) sum));
         }
         return result;
     }
