@@ -7,6 +7,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.AnalyzerClient;
 import ru.practicum.CollectorClient;
@@ -36,6 +37,7 @@ import static ru.practicum.controller.params.mapper.PublicSearchParamsMapper.map
 @RestController
 @RequestMapping("/events")
 @RequiredArgsConstructor
+@Validated
 public class PublicEventController {
 
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
