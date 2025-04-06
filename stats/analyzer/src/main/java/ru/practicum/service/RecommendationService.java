@@ -62,21 +62,49 @@ public class RecommendationService {
 
         Set<Long> interacted = userInteracted(userId);
 
+        List<Long> events = recent.stream()
+                .map(UserAction::getEventId)
+                .toList();
+
+        List<EventSimilarity> allSimilarities = similarityRepo.findByEventAInOrEventBIn(events);
+
         Map<Long, Float> bestScoreMap = new HashMap<>();
-        for (UserAction r : recent) {
-            long ev = r.getEventId();
-            List<EventSimilarity> simList = similarityRepo.findByEventAOrEventB(ev, ev);
-            for (EventSimilarity e : simList) {
-                long other = (e.getEventA() == ev) ? e.getEventB() : e.getEventA();
-                if (interacted.contains(other)) {
-                    continue;
+
+        for (EventSimilarity similarity : allSimilarities) {
+            long eventA = similarity.getEventA();
+            long eventB = similarity.getEventB();
+            float score = similarity.getScore();
+
+            // Проверяем, если eventA или eventB относятся к recent events
+            if (events.contains(eventA)) {
+                long other = eventB;
+                if (!interacted.contains(other)) {
+                    updateBestScore(bestScoreMap, other, score);
                 }
-                float oldVal = bestScoreMap.getOrDefault(other, 0f);
-                if (e.getScore() > oldVal) {
-                    bestScoreMap.put(other, e.getScore());
+            }
+            if (events.contains(eventB)) {
+                long other = eventA;
+                if (!interacted.contains(other)) {
+                    updateBestScore(bestScoreMap, other, score);
                 }
             }
         }
+
+//
+//        for (UserAction r : recent) {
+//            long ev = r.getEventId();
+//            List<EventSimilarity> simList = similarityRepo.findByEventAOrEventB(ev, ev);
+//            for (EventSimilarity e : simList) {
+//                long other = (e.getEventA() == ev) ? e.getEventB() : e.getEventA();
+//                if (interacted.contains(other)) {
+//                    continue;
+//                }
+//                float oldVal = bestScoreMap.getOrDefault(other, 0f);
+//                if (e.getScore() > oldVal) {
+//                    bestScoreMap.put(other, e.getScore());
+//                }
+//            }
+//        }
 
         return bestScoreMap.entrySet().stream()
                 .map(e -> new RecommendedEvent(e.getKey(), e.getValue()))
@@ -105,5 +133,12 @@ public class RecommendationService {
                 .stream()
                 .map(UserAction::getEventId)
                 .collect(Collectors.toSet());
+    }
+
+    private void updateBestScore(Map<Long, Float> bestScoreMap, long other, float score) {
+        float currentScore = bestScoreMap.getOrDefault(other, 0f);
+        if (score > currentScore) {
+            bestScoreMap.put(other, score);
+        }
     }
 }
