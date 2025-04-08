@@ -35,6 +35,8 @@ public record EventShortDto(
 
         Long views,
 
+        double rating,
+
         Long likesCount
 
 ) {
